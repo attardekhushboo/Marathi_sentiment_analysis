@@ -1,10 +1,10 @@
-# 📝 Marathi Sentiment Analysis with MahaSBERT + BiLSTM  
+#  Marathi Sentiment Analysis with MahaSBERT + BiLSTM  
 
 This project implements a **Marathi Sentiment Analysis** system by combining **MahaSBERT embeddings** with a **BiLSTM model**. The system classifies Marathi comments into three sentiment classes: **Negative, Neutral, and Positive**.  
 
 ---
 
-## 📌 Overview  
+##  Overview  
 - **Objective**: Analyze sentiment from Marathi text data.  
 - **Dataset**: Labeled tweets (`tweets_train.csv`) with three sentiment classes.  
 - **Model**:  
@@ -14,7 +14,7 @@ This project implements a **Marathi Sentiment Analysis** system by combining **M
 
 ---
 
-## 📂 Dataset  
+##  Dataset  
 - **Format**: CSV file (`tweets_train.csv`) with columns:  
   - `text` → Marathi sentence/comment.  
   - `label` → sentiment (-1 = Negative, 0 = Neutral, 1 = Positive).  
@@ -25,13 +25,13 @@ This project implements a **Marathi Sentiment Analysis** system by combining **M
 
 ---
 
-## 🛠️ Methodology  
+##  Methodology  
 
 ### 🔹 Feature Extraction  
 - Used **MahaSBERT (`l3cube-pune/marathi-sentence-bert-nli`)** from Hugging Face.  
 - Extracted **token-level embeddings** (`last_hidden_state`).  
 
-### 🔹 BiLSTM Model Architecture  
+### BiLSTM Model Architecture  
 - **Input**: `(max_len=60, 768)` embeddings.  
 - **Layers**:  
   - SpatialDropout1D  
@@ -44,7 +44,7 @@ This project implements a **Marathi Sentiment Analysis** system by combining **M
 
 ---
 
-## 🚀 Implementation  
+## Implementation  
 ### Steps  
 1. Load dataset and preprocess.  
 2. Extract **MahaSBERT embeddings**.  
@@ -53,7 +53,7 @@ This project implements a **Marathi Sentiment Analysis** system by combining **M
 
 ---
 
-## 📊 Results  
+## Results  
 
 - Achieved **high accuracy** on test data.  
 - Example classification report:  
@@ -64,18 +64,18 @@ This project implements a **Marathi Sentiment Analysis** system by combining **M
 | Neutral   | 0.87      | 0.89   | 0.88     |
 | Positive  | 0.94      | 0.95   | 0.94     |
 
-✅ The **MahaSBERT + BiLSTM** model outperforms traditional methods for Marathi sentiment classification.  
+The **MahaSBERT + BiLSTM** model outperforms traditional methods for Marathi sentiment classification.  
 
 ---
 
-## 📌 Applications  
+## Applications  
 - **Social Media Monitoring** (analyzing Marathi tweets & comments).  
 - **Customer Feedback Analysis** (local language surveys).  
 - **Opinion Mining** in politics, marketing, and public policy.  
 
 ---
 
-## 🔮 Future Work  
+## Future Work  
 - Extend to **multilingual sentiment analysis** (combine Marathi with Hindi, English).  
 - Experiment with **transformer fine-tuning** instead of embeddings.  
 - Deploy as an interactive **web app** (Streamlit / Flask).  
