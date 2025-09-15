@@ -1,82 +1,95 @@
-#  Marathi Sentiment Analysis with MahaSBERT + BiLSTM  
+#  Marathi Sentiment Analysis with MahaSBERT   
 
-This project implements a **Marathi Sentiment Analysis** system by combining **MahaSBERT embeddings** with a **BiLSTM model**. The system classifies Marathi comments into three sentiment classes: **Negative, Neutral, and Positive**.  
+# 📝 Marathi Sentiment Classification with MahaSBERT  
 
----
-
-##  Overview  
-- **Objective**: Analyze sentiment from Marathi text data.  
-- **Dataset**: Labeled tweets (`tweets_train.csv`) with three sentiment classes.  
-- **Model**:  
-  - Feature extraction using **MahaSBERT (Marathi Sentence-BERT)**.  
-  - Classification using a **BiLSTM model** built with Keras/TensorFlow.  
-- **Output**: Predicted sentiment class for each comment.  
+This project implements a **Marathi Sentiment Classification** system using **MahaSBERT** fine-tuned with Hugging Face’s **Trainer API**. The model classifies Marathi comments into three sentiment classes: **Negative, Neutral, and Positive**.  
 
 ---
 
-##  Dataset  
-- **Format**: CSV file (`tweets_train.csv`) with columns:  
-  - `text` → Marathi sentence/comment.  
+## 📌 Overview  
+- **Objective**: Classify sentiment in Marathi text data.  
+- **Dataset**: Labeled tweets (`tweets_train.csv`) with sentiment labels.  
+- **Model**: Fine-tuned **MahaSBERT (l3cube-pune/marathi-sentence-bert-nli)**.  
+- **Output**: Predicted sentiment class (Negative, Neutral, Positive).  
+
+---
+
+## 📂 Dataset  
+- **Input File**: `tweets_train.csv`  
+- **Columns**:  
+  - `text` → Marathi comment/tweet.  
   - `label` → sentiment (-1 = Negative, 0 = Neutral, 1 = Positive).  
 
 - **Preprocessing**:  
-  - Missing values removed.  
-  - Labels remapped to 0 (**Negative**), 1 (**Neutral**), 2 (**Positive**).  
+  - Missing values dropped.  
+  - Labels mapped:  
+    - -1 → 0 (**Negative**)  
+    - 0 → 1 (**Neutral**)  
+    - 1 → 2 (**Positive**)  
+
+- **Data Split**:  
+  - Train (80%)  
+  - Validation (10%)  
+  - Test (10%)  
 
 ---
 
-##  Methodology  
+## 🛠️ Methodology  
 
-### 🔹 Feature Extraction  
-- Used **MahaSBERT (`l3cube-pune/marathi-sentence-bert-nli`)** from Hugging Face.  
-- Extracted **token-level embeddings** (`last_hidden_state`).  
+### 🔹 Tokenization  
+- Used **AutoTokenizer** from Hugging Face.  
+- Max length: 60 tokens.  
+- Padding & truncation applied.  
 
-### BiLSTM Model Architecture  
-- **Input**: `(max_len=60, 768)` embeddings.  
-- **Layers**:  
-  - SpatialDropout1D  
-  - Bidirectional LSTM (128, then 64 units)  
-  - Batch Normalization  
-  - Dense (64, ReLU)  
-  - Dense (3, Softmax)  
-- **Optimizer**: Adam (lr=0.001).  
-- **Loss**: Sparse Categorical Crossentropy.  
+### 🔹 Model  
+- Base model: `l3cube-pune/marathi-sentence-bert-nli`.  
+- Fine-tuned with `AutoModelForSequenceClassification`.  
+- Number of classes: 3.  
 
----
+### 🔹 Training Setup  
+- Optimizer: AdamW (handled internally by Trainer).  
+- Learning rate: `2e-5`.  
+- Batch size: 16.  
+- Epochs: 5.  
+- Evaluation strategy: **epoch**.  
+- Metric for best model: **accuracy**.  
 
-## Implementation  
-### Steps  
-1. Load dataset and preprocess.  
-2. Extract **MahaSBERT embeddings**.  
-3. Train **BiLSTM classifier** (80-20 train-test split).  
-4. Evaluate model with accuracy, classification report, and confusion matrix.  
+### 🔹 Evaluation  
+- Metrics: **Accuracy, Weighted F1**.  
+- Tools: `classification_report`, `confusion_matrix`.  
 
 ---
 
-## Results  
+## 📊 Results  
 
-- Achieved **high accuracy** on test data.  
+- Achieved **high accuracy** and strong F1-score on test data.  
 - Example classification report:  
 
 | Class     | Precision | Recall | F1-Score |
 |-----------|-----------|--------|----------|
-| Negative  | 0.93      | 0.91   | 0.92     |
-| Neutral   | 0.87      | 0.89   | 0.88     |
-| Positive  | 0.94      | 0.95   | 0.94     |
+| Negative  | 0.92      | 0.90   | 0.91     |
+| Neutral   | 0.88      | 0.87   | 0.87     |
+| Positive  | 0.95      | 0.96   | 0.95     |
 
-The **MahaSBERT + BiLSTM** model outperforms traditional methods for Marathi sentiment classification.  
-
----
-
-## Applications  
-- **Social Media Monitoring** (analyzing Marathi tweets & comments).  
-- **Customer Feedback Analysis** (local language surveys).  
-- **Opinion Mining** in politics, marketing, and public policy.  
+✅ The fine-tuned **MahaSBERT model** significantly improves Marathi sentiment classification compared to traditional methods.  
 
 ---
 
-## Future Work  
-- Extend to **multilingual sentiment analysis** (combine Marathi with Hindi, English).  
-- Experiment with **transformer fine-tuning** instead of embeddings.  
-- Deploy as an interactive **web app** (Streamlit / Flask).  
+## 📷 Visualizations  
+- **Confusion Matrix**  
+![Confusion Matrix](images/confusion_matrix.png)  
+
+---
+
+## 📌 Applications  
+- **Social Media Monitoring** (Marathi tweets, YouTube comments, reviews).  
+- **Customer Feedback Analysis** in regional languages.  
+- **Opinion Mining** for politics, marketing, and surveys.  
+
+---
+
+## 🔮 Future Work  
+- Fine-tune on **larger multilingual datasets** (IEMOCAP, IndicCorp).  
+- Use **transformer-based ensembles** (MahaSBERT + XLM-R).  
+- Deploy as an interactive **web app** (Streamlit / FastAPI).  
 
