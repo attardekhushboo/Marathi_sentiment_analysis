@@ -1,109 +1,102 @@
-import pandas as pd
 import torch
-from sklearn.metrics import accuracy_score, f1_score, classification_report, confusion_matrix
-from sklearn.model_selection import train_test_split
-from datasets import Dataset
-from transformers import (
-    AutoTokenizer, 
-    AutoModelForSequenceClassification,
-    TrainingArguments,
-    Trainer
-)
-import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import tensorflow as tf
 import seaborn as sns
+import matplotlib.pyplot as plt
+from transformers import AutoTokenizer, AutoModel
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout, SpatialDropout1D, BatchNormalization, Input, Bidirectional
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix
+from tqdm import tqdm
 
-# Load single dataset
-df = pd.read_csv("tweets_train.csv")  # Use your full dataset here
+# Load dataset
+df = pd.read_csv("tweets_train.csv")
+df.dropna(inplace=True)
 
-# Label Mapping: -1 → 0 (Negative), 0 → 1 (Neutral), 1 → 2 (Positive)
-label_map = {-1: 0, 0: 1, 1: 2}
-df['label'] = df['label'].map(label_map)
+# Label Mapping: -1 (Negative) -> 0, 0 (Neutral) -> 1, 1 (Positive) -> 2
+label_mapping = {-1: 0, 0: 1, 1: 2}
+df['label'] = df['label'].map(label_mapping)
 
-# Split into train, validation, test (80-10-10 split)
-train_df, temp_df = train_test_split(df, test_size=0.2, stratify=df['label'], random_state=42)
-val_df, test_df = train_test_split(temp_df, test_size=0.5, stratify=temp_df['label'], random_state=42)
-
-# Load tokenizer
+# MahaSBERT model and tokenizer
 MODEL_NAME = "l3cube-pune/marathi-sentence-bert-nli"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+mahabert_model = AutoModel.from_pretrained(MODEL_NAME)
 
-# Tokenization function
-def tokenize_fn(example):
-    return tokenizer(example['text'], padding='max_length', truncation=True, max_length=60)
+# Function to extract MahaSBERT embeddings (full token-level sequence)
+def get_mahabert_embeddings(texts, max_len=60, batch_size=16):
+    mahabert_model.eval()
+    all_embeddings = []
 
-# Convert to HuggingFace Datasets
-train_dataset = Dataset.from_pandas(train_df[['text', 'label']])
-val_dataset = Dataset.from_pandas(val_df[['text', 'label']])
-test_dataset = Dataset.from_pandas(test_df[['text', 'label']])
+    for i in tqdm(range(0, len(texts), batch_size)):
+        batch_texts = texts[i:i+batch_size].tolist()
+        inputs = tokenizer(batch_texts, padding='max_length', truncation=True,
+                           max_length=max_len, return_tensors='pt')
+        with torch.no_grad():
+            outputs = mahabert_model(**inputs)
+        embeddings = outputs.last_hidden_state  # Shape: (batch_size, max_len, 768)
+        all_embeddings.append(embeddings)
 
-# Tokenize
-train_dataset = train_dataset.map(tokenize_fn, batched=True)
-val_dataset = val_dataset.map(tokenize_fn, batched=True)
-test_dataset = test_dataset.map(tokenize_fn, batched=True)
+    return torch.cat(all_embeddings).numpy()
 
-# Format for PyTorch
-for dataset in [train_dataset, val_dataset, test_dataset]:
-    dataset = dataset.rename_column("label", "labels")
-    dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
+# Get embeddings
+X = get_mahabert_embeddings(df['text'], max_len=60)  # Shape: (samples, max_len, 768)
+y = np.array(df['label'])
 
-# Load model
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME, num_labels=3)
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
 
-# Training arguments
-training_args = TrainingArguments(
-    output_dir="./mahasentiment_model",
-    evaluation_strategy="epoch",
-    save_strategy="epoch",
-    learning_rate=2e-5,
-    per_device_train_batch_size=16,
-    per_device_eval_batch_size=16,
-    num_train_epochs=5,
-    weight_decay=0.01,
-    logging_dir="./logs",
-    load_best_model_at_end=True,
-    metric_for_best_model="accuracy"
-)
+# BiLSTM Model
+model = Sequential([
+    Input(shape=(X_train.shape[1], X_train.shape[2])),  # (max_len, 768)
+    SpatialDropout1D(0.2),
 
-# Metrics
-def compute_metrics(p):
-    preds = torch.argmax(torch.tensor(p.predictions), axis=1)
-    labels = p.label_ids
-    return {
-        'accuracy': accuracy_score(labels, preds),
-        'f1': f1_score(labels, preds, average='weighted')
-    }
+    Bidirectional(LSTM(128, return_sequences=True, dropout=0.3, recurrent_dropout=0.3)),
+    BatchNormalization(),
 
-# Trainer
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=train_dataset,
-    eval_dataset=val_dataset,
-    compute_metrics=compute_metrics,
-)
+    Bidirectional(LSTM(64, dropout=0.3, recurrent_dropout=0.3)),
+    Dropout(0.3),
+
+    Dense(64, activation='relu'),
+    Dropout(0.3),
+
+    Dense(3, activation='softmax')
+])
+
+# Compile
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+# Callbacks
+lr_scheduler = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, verbose=1)
+early_stopping = EarlyStopping(monitor='val_loss', patience=4, restore_best_weights=True, verbose=1)
 
 # Train
-trainer.train()
+history = model.fit(X_train, y_train, epochs=30, batch_size=32,
+                    validation_data=(X_test, y_test),
+                    callbacks=[lr_scheduler, early_stopping])
 
-# Evaluate on validation set
-eval_results = trainer.evaluate()
-print("\nValidation Evaluation Results:", eval_results)
+# Evaluate
+loss, accuracy = model.evaluate(X_test, y_test)
+print(f"\nTest Accuracy: {accuracy:.4f}")
 
-# Evaluate on test set
-test_results = trainer.predict(test_dataset)
-test_preds = torch.argmax(torch.tensor(test_results.predictions), axis=1)
-test_labels = test_results.label_ids
+# Predict
+y_pred_probs = model.predict(X_test)
+y_pred = np.argmax(y_pred_probs, axis=1)
 
-# Classification Report
-print("\nTest Set Classification Report:\n", classification_report(test_labels, test_preds, target_names=["Negative", "Neutral", "Positive"]))
+# Report
+print("\nClassification Report:\n", classification_report(y_test, y_pred, target_names=['Negative', 'Neutral', 'Positive']))
 
 # Confusion Matrix
-cm = confusion_matrix(test_labels, test_preds)
+cm = confusion_matrix(y_test, y_pred)
 plt.figure(figsize=(6, 5))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-            xticklabels=["Negative", "Neutral", "Positive"],
-            yticklabels=["Negative", "Neutral", "Positive"])
-plt.xlabel('Predicted')
-plt.ylabel('True')
-plt.title('Test Set Confusion Matrix')
+            xticklabels=['Negative', 'Neutral', 'Positive'],
+            yticklabels=['Negative', 'Neutral', 'Positive'])
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.title('Confusion Matrix')
 plt.show()
