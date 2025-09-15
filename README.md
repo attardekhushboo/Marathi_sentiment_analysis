@@ -73,12 +73,6 @@ The fine-tuned **MahaSBERT model** significantly improves Marathi sentiment clas
 
 ---
 
-## Visualizations  
-- **Confusion Matrix**  
-![Confusion Matrix](images/confusion_matrix.png)  
-
----
-
 ## Applications  
 - **Social Media Monitoring** (Marathi tweets, YouTube comments, reviews).  
 - **Customer Feedback Analysis** in regional languages.  
