@@ -1,12 +1,10 @@
-#  Marathi Sentiment Analysis with MahaSBERT   
-
-# 📝 Marathi Sentiment Classification with MahaSBERT  
+# Marathi Sentiment Classification with MahaSBERT  
 
 This project implements a **Marathi Sentiment Classification** system using **MahaSBERT** fine-tuned with Hugging Face’s **Trainer API**. The model classifies Marathi comments into three sentiment classes: **Negative, Neutral, and Positive**.  
 
 ---
 
-## 📌 Overview  
+## Overview  
 - **Objective**: Classify sentiment in Marathi text data.  
 - **Dataset**: Labeled tweets (`tweets_train.csv`) with sentiment labels.  
 - **Model**: Fine-tuned **MahaSBERT (l3cube-pune/marathi-sentence-bert-nli)**.  
@@ -14,7 +12,7 @@ This project implements a **Marathi Sentiment Classification** system using **Ma
 
 ---
 
-## 📂 Dataset  
+## Dataset  
 - **Input File**: `tweets_train.csv`  
 - **Columns**:  
   - `text` → Marathi comment/tweet.  
@@ -34,7 +32,7 @@ This project implements a **Marathi Sentiment Classification** system using **Ma
 
 ---
 
-## 🛠️ Methodology  
+## Methodology  
 
 ### 🔹 Tokenization  
 - Used **AutoTokenizer** from Hugging Face.  
@@ -60,7 +58,7 @@ This project implements a **Marathi Sentiment Classification** system using **Ma
 
 ---
 
-## 📊 Results  
+## Results  
 
 - Achieved **high accuracy** and strong F1-score on test data.  
 - Example classification report:  
@@ -71,24 +69,24 @@ This project implements a **Marathi Sentiment Classification** system using **Ma
 | Neutral   | 0.88      | 0.87   | 0.87     |
 | Positive  | 0.95      | 0.96   | 0.95     |
 
-✅ The fine-tuned **MahaSBERT model** significantly improves Marathi sentiment classification compared to traditional methods.  
+The fine-tuned **MahaSBERT model** significantly improves Marathi sentiment classification compared to traditional methods.  
 
 ---
 
-## 📷 Visualizations  
+## Visualizations  
 - **Confusion Matrix**  
 ![Confusion Matrix](images/confusion_matrix.png)  
 
 ---
 
-## 📌 Applications  
+## Applications  
 - **Social Media Monitoring** (Marathi tweets, YouTube comments, reviews).  
 - **Customer Feedback Analysis** in regional languages.  
 - **Opinion Mining** for politics, marketing, and surveys.  
 
 ---
 
-## 🔮 Future Work  
+## Future Work  
 - Fine-tune on **larger multilingual datasets** (IEMOCAP, IndicCorp).  
 - Use **transformer-based ensembles** (MahaSBERT + XLM-R).  
 - Deploy as an interactive **web app** (Streamlit / FastAPI).  
